@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+    <style>
+        @font-face {
+            font-family: 'Giants-Bold';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/Giants-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+        *{padding: 0px; margin: 0px;}
+        #gamedata{
+            position: absolute;
+            font-family: 'Giants-Bold';
+            font-size: 25px;
+        }
+        #rail{
+            width: 40vh;
+            height: 100vh;
+            background-color: #000000b0;
+            position: relative;
+            overflow: hidden;
+        }
+        #noterail_def{
+            width: 100%;
+            background-color: #ff252517;
+            position: absolute;
+            overflow: hidden;
+        }
+        #noterail_1{
+            width: 25%;
+            position: absolute;
+        }
+        #noterail_2{
+            width: 25%;
+            left: 25%;
+            position: absolute;
+        }
+        #noterail_3{
+            width: 25%;
+            left: 50%;
+            position: absolute;
+        }
+        #noterail_4{
+            width: 25%;
+            left: 75%;
+            position: absolute;
+        }
+        #noterail_hit{
+            /* height: 90000px; */
+            background-color: #dbdbdb;
+            width: 100%;
+            bottom: 0px;
+            left: 0px;
+            /* left: 30vh; */
+            position: absolute;
+        }
+        #infobar{
+            width: 100vw;
+            height: 20vh;
+            position: absolute;
+            background-color: #000000cc;
+            top: 30vh;
+            transition: .3s;
+            z-index: 10;
+        }
+        #infobar p{
+            font-size: 5vh;
+            color: #fff;
+            font-family: 'Giants-Bold';
+            text-align: center;
+            line-height: 20vh;
+        }
+    </style>
+</head>
+<body>
+    <p id="gamedata">123</p>
+    <div id="infobar"><p>일시정지</p></div>
+    <div id="hp_bar"></div>
+    <div id="rail">
+        <div id="noterail_1"></div>
+        <div id="noterail_2"></div>
+        <div id="noterail_3"></div>
+        <div id="noterail_4"></div>
+        <div id="noterail_def"></div>
+        <div id="noterail_hit"></div>
+    </div>
+    <script>
+
+        
+        
+        // 기본설정
+        let maxrailsize = 3000
+        let basedelay = 100
+        let notespeed = 20
+        let gametime = 0
+        let hitpoint = 100
+        let gamerun = 0
+        let score = 0
+        let combo = 0
+        let acc = 0
+        let hp = 100
+
+        let singlenote_h = 10
+
+        let notedata
+
+        let notemap_1 = new Array
+        let notemap_2 = new Array
+        let notemap_3 = new Array
+        let notemap_4 = new Array
+
+        let onescore
+        
+
+        // 맵 불러오기
+        var request = new XMLHttpRequest();
+        request.open("GET", './keyyyeyjs.json');
+        request.responseType = "json";
+        request.send();
+        request.onload = function(){
+            notedata = request.response
+            // console.log(notedata[0].rail_1note)
+            addnotesys(notedata[0])
+            gamerun=1
+            notemap_1 = notedata[0].rail_1note
+            notemap_2 = notedata[0].rail_2note
+            notemap_3 = notedata[0].rail_3note
+            notemap_4 = notedata[0].rail_4note
+            console.log(notemap_1)
+            onescore = Math.floor((1000000/(notemap_1.length+notemap_2.length+notemap_3.length+notemap_4.length))/100)
+            console.log(onescore)
+        }
+
+
+        let scoreper = [100, 100, 100, 100, 100, 90, 75, 50, 30, 15, 5]
+        let acctitle = ["Perfect","Grate","Epic","Good","Okay","Bad","Miss"]
+        let acctitleon
+
+        // 화면 사이즈 체크
+        let windowheight = window.innerHeight
+        let windowwidth = window.innerWidth
+        
+        // 화면 사이즈 변환시 활성화
+        addEventListener('resize',function(){
+            windowheight = window.innerHeight
+            windowwidth = window.innerWidth
+            setstyle()
+        })
+
+        // console.log(windowwidth)
+        
+        // 기본 객체 불러오기
+        let railcontainer = document.getElementById('rail')
+        let noterail01 = document.getElementById('noterail_1')
+        let noterail02 = document.getElementById('noterail_2')
+        let noterail03 = document.getElementById('noterail_3')
+        let noterail04 = document.getElementById('noterail_4')
+        let noteraildef = document.getElementById('noterail_def')
+        let noterailhit = document.getElementById('noterail_hit')
+        let gamedatap = document.getElementById('gamedata')
+        let infobar = document.getElementById('infobar')
+        let hpbar = document.getElementById('hp_bar')
+        
+        // 스타일
+        function setstyle(){
+            railcontainer.style.left=`${(windowwidth/2)-(windowheight/100*20)}px`
+            noteraildef.style.opacity=`0`
+            noterail01.style.height=`${maxrailsize}px`
+            noterail01.style.bottom=`0px`
+            noterail02.style.height=`${maxrailsize}px`
+            noterail02.style.bottom=`0px`
+            noterail03.style.height=`${maxrailsize}px`
+            noterail03.style.bottom=`0px`
+            noterail04.style.height=`${maxrailsize}px`
+            noterail04.style.bottom=`0px`
+            noterailhit.style.height=`${hitpoint}px`
+            infobar.style.opacity=0
+            
+        }
+
+        
+        
+        setstyle()
+
+        // 노트 생성
+        function addhtmlnodeinhtml(newnodes=String, appednode=HTMLElement, name=String){
+                let create = document.createElement(newnodes)
+                create.id = name
+                let script = document.createElement('script')
+                script.id = `${name}js`
+                script.textContent=`let ${name} = document.getElementById('${name}');let ${name}js = document.getElementById('${name}js');${name}js.remove()`;
+                appednode.appendChild(create)
+                document.body.appendChild(script)
+        }
+
+        function addnotesys(data){
+            for(let i=0; i<data.rail_1note.length;i++){
+                addnote(noterail01, data.rail_1note[i].ntime, data.rail_1note[i].notetype)
+            }
+            for(let i=0; i<data.rail_2note.length;i++){
+                addnote(noterail02, data.rail_2note[i].ntime, data.rail_2note[i].notetype)
+            }
+            for(let i=0; i<data.rail_3note.length;i++){
+                addnote(noterail03, data.rail_3note[i].ntime, data.rail_3note[i].notetype)
+            }
+            for(let i=0; i<data.rail_4note.length;i++){
+                addnote(noterail04, data.rail_4note[i].ntime, data.rail_4note[i].notetype)
+            }
+        }
+
+        function addnote(appednode=HTMLElement, timeing=Number, type=Number){
+                let create = document.createElement('div')
+                create.style.position='absolute'
+                create.style.width=`100%`
+                create.style.height=`${singlenote_h}px`
+                // create.style.left='0px'
+                create.style.bottom=`${((basedelay+timeing)*notespeed)-(singlenote_h/2)+hitpoint}px`
+                if(type==0){
+                    create.style.backgroundColor=`#fff`
+                }else if(type==1){
+                    create.style.backgroundColor=`#0f0`
+                    
+                }else if(type==2){
+                    create.style.backgroundColor=`#f00`
+
+                }
+                create.className=`${type}_${timeing}`
+                appednode.appendChild(create)
+        }
+
+
+
+
+
+
+        // 키 인식 스크립트
+        window.addEventListener("keydown", keysPressed, false);
+        window.addEventListener("keyup", keysReleased, false);
+
+        var keys = [];
+
+        function keysPressed(e) {
+            keys[e.keyCode] = true;
+            console.log(e.keyCode)
+            
+        }
+
+        function keysReleased(e) {
+            keys[e.keyCode] = false;
+        }
+
+        
+        
+        function gamerunningsystem() {
+            if(gamerun==1){
+                gametime++
+                if(keys[32]){
+                    keys[32]=false
+                    gamerun=0
+                    infobar.style.opacity=`1`
+                }
+            }else{
+                if(keys[32]){
+                    keys[32]=false
+                    gamerun=1
+                    infobar.style.opacity=`0`
+                }
+            }
+
+
+            // 노트적중 확인
+            // 1번 라인
+            if(keys[65]){
+                noteaccinput(65, notemap_1)
+            }
+            // 2번 라인
+            if(keys[83]){
+                noteaccinput(83, notemap_2)
+            }
+            // 3번 라인
+            if(keys[186]){
+                noteaccinput(186, notemap_3)
+            }
+            // 4번 라인
+            if(keys[222]){
+                noteaccinput(222, notemap_4)
+            }
+
+
+            // 노트 움직임
+            noterail01.style.bottom=`-${gametime*notespeed}px`
+            noterail02.style.bottom=`-${gametime*notespeed}px`
+            noterail03.style.bottom=`-${gametime*notespeed}px`
+            noterail04.style.bottom=`-${gametime*notespeed}px`
+
+            gamedatap.innerText = `게임 타임 : ${Math.floor(notetimeset()/60)}초 \n${combo}\n${score}(${onescore*100})\n${acctitleon}`
+            requestAnimationFrame(gamerunningsystem)
+        }
+
+        gamerunningsystem()
+
+        function notetimeset(){
+            return ((gametime-basedelay)/notespeed)*notespeed
+        }
+
+        function noteaccinput(keynum, data){
+            for(i=0;i<data.length;i++){
+                if(notetimeset()-data[i].ntime==0){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[0]
+                    acctitleon = acctitle[0]
+                }else if(notetimeset()-data[i].ntime==-1 || notetimeset()-data[i].ntime==1){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[1]
+                    acctitleon = acctitle[0]
+                }else if(notetimeset()-data[i].ntime==-2 || notetimeset()-data[i].ntime==2){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[2]
+                    acctitleon = acctitle[0]
+                }else if(notetimeset()-data[i].ntime==-3 || notetimeset()-data[i].ntime==3){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[3]
+                    acctitleon = acctitle[0]
+                }else if(notetimeset()-data[i].ntime==-4 || notetimeset()-data[i].ntime==4){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[4]
+                    acctitleon = acctitle[0]
+                }else if(notetimeset()-data[i].ntime==-5 || notetimeset()-data[i].ntime==5){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[5]
+                    acctitleon = acctitle[1]
+                }else if(notetimeset()-data[i].ntime==-6 || notetimeset()-data[i].ntime==6){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[6]
+                    acctitleon = acctitle[2]
+                }else if(notetimeset()-data[i].ntime==-7 || notetimeset()-data[i].ntime==7){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[7]
+                    acctitleon = acctitle[3]
+                }else if(notetimeset()-data[i].ntime==-8 || notetimeset()-data[i].ntime==8){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[8]
+                    acctitleon = acctitle[4]
+                }else if(notetimeset()-data[i].ntime==-9 || notetimeset()-data[i].ntime==9){
+                    data.splice(0, 1)
+                    combo++
+                    score+=onescore*scoreper[9]
+                    acctitleon = acctitle[5]
+                }else if(notetimeset()-data[i].ntime==-10 || notetimeset()-data[i].ntime==10){
+                    data.splice(0, 1)
+                    combo=0
+                    score+=onescore*scoreper[10]
+                    acctitleon = acctitle[6]
+                }
+            }
+        }
+
+
+    </script>
+</body>
+</html>

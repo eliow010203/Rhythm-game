@@ -1,0 +1,41 @@
+[
+    {
+        "musicname":"test",
+        "rail_1note":[
+            {"ntime":10,"notetype":0},
+            {"ntime":60,"notetype":0},
+            {"ntime":110,"notetype":0},
+            {"ntime":160,"notetype":0},
+            {"ntime":210,"notetype":0}
+        ],
+        "rail_2note":[
+            {"ntime":20,"notetype":0},
+            {"ntime":70,"notetype":0},
+            {"ntime":120,"notetype":0},
+            {"ntime":170,"notetype":0},
+            {"ntime":220,"notetype":0}
+            
+        ],
+        "rail_3note":[
+            {"ntime":30,"notetype":0},
+            {"ntime":80,"notetype":0},
+            {"ntime":130,"notetype":0},
+            {"ntime":180,"notetype":0},
+            {"ntime":230,"notetype":0}
+            
+        ],
+        "rail_4note":[
+            {"ntime":40,"notetype":0},
+            {"ntime":90,"notetype":0},
+            {"ntime":140,"notetype":0},
+            {"ntime":190,"notetype":0},
+            {"ntime":240,"notetype":0}
+            
+        ],
+        "rail_defnote":[
+            {"ntime":50,"notetype":0}
+
+        ]
+
+    }
+]
