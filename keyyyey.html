@@ -17,6 +17,8 @@
             position: absolute;
             font-family: 'Giants-Bold';
             font-size: 25px;
+            position: absolute;
+
         }
         #rail{
             width: 40vh;
@@ -75,12 +77,35 @@
             text-align: center;
             line-height: 20vh;
         }
+        #hp_bar{
+            position: absolute;
+            width: 4vh;
+            height: 100vh;
+            background-color: #000000dc;
+        }
+        #hpind{
+            width: 2vh;
+            position: absolute;
+            left: 1vh;
+            bottom: 10px;
+            background-color: #fff;
+        }
+        #hpindef{
+            width: 2vh;
+            position: absolute;
+            left: 1vh;
+            bottom: 10px;
+            background-color: #ff3f3f;
+        }
     </style>
 </head>
 <body>
     <p id="gamedata">123</p>
     <div id="infobar"><p>일시정지</p></div>
-    <div id="hp_bar"></div>
+    <div id="hp_bar">
+        <div id="hpindef"></div>
+        <div id="hpind"></div>
+    </div>
     <div id="rail">
         <div id="noterail_1"></div>
         <div id="noterail_2"></div>
@@ -95,7 +120,7 @@
         
         // 기본설정
         let maxrailsize = 3000
-        let basedelay = 100
+        let basedelay = 151
         let notespeed = 20
         let gametime = 0
         let hitpoint = 100
@@ -103,7 +128,19 @@
         let score = 0
         let combo = 0
         let acc = 0
-        let hp = 100
+        let hp = 1000
+
+        let notedamage = 130
+        let noteheal = -45
+
+        // 화면 사이즈 체크
+        let windowheight = window.innerHeight
+        let windowwidth = window.innerWidth
+
+        let hpbar1per = (windowheight-20)/hp
+
+        let nowhpbarh = hpbar1per*hp
+        let nowhpbarefh = hpbar1per*hp
 
         let singlenote_h = 10
 
@@ -131,19 +168,18 @@
             notemap_2 = notedata[0].rail_2note
             notemap_3 = notedata[0].rail_3note
             notemap_4 = notedata[0].rail_4note
-            console.log(notemap_1)
-            onescore = Math.floor((1000000/(notemap_1.length+notemap_2.length+notemap_3.length+notemap_4.length))/100)
-            console.log(onescore)
+            onescore = (1000000/(notemap_1.length+notemap_2.length+notemap_3.length+notemap_4.length))/100
+            
         }
 
 
-        let scoreper = [100, 100, 100, 100, 100, 90, 75, 50, 30, 15, 5]
+        let scoreper = [100, 100, 100, 100, 100, 100, 75, 50, 30, 15, 5]
         let acctitle = ["Perfect","Grate","Epic","Good","Okay","Bad","Miss"]
-        let acctitleon
+        let acctitleon = ''
 
-        // 화면 사이즈 체크
-        let windowheight = window.innerHeight
-        let windowwidth = window.innerWidth
+        let notelist = [notemap_1,notemap_2,notemap_3,notemap_4]
+
+        
         
         // 화면 사이즈 변환시 활성화
         addEventListener('resize',function(){
@@ -165,10 +201,13 @@
         let gamedatap = document.getElementById('gamedata')
         let infobar = document.getElementById('infobar')
         let hpbar = document.getElementById('hp_bar')
+        let hpbarin = document.getElementById('hpind')
+        let hpbaref = document.getElementById('hpindef')
         
         // 스타일
         function setstyle(){
             railcontainer.style.left=`${(windowwidth/2)-(windowheight/100*20)}px`
+            hpbar.style.left=`${(windowwidth/2)-(windowheight/100*20)-(windowheight/100*4)}px`
             noteraildef.style.opacity=`0`
             noterail01.style.height=`${maxrailsize}px`
             noterail01.style.bottom=`0px`
@@ -180,7 +219,13 @@
             noterail04.style.bottom=`0px`
             noterailhit.style.height=`${hitpoint}px`
             infobar.style.opacity=0
-            
+            hpbarin.style.height=`${nowhpbarh}px`
+            hpbaref.style.height=`${nowhpbarefh}px`
+        }
+        
+        function hpbaraction(){
+            hpbarin.style.height=`${nowhpbarh}px`
+            hpbaref.style.height=`${nowhpbarefh}px`
         }
 
         
@@ -188,15 +233,7 @@
         setstyle()
 
         // 노트 생성
-        function addhtmlnodeinhtml(newnodes=String, appednode=HTMLElement, name=String){
-                let create = document.createElement(newnodes)
-                create.id = name
-                let script = document.createElement('script')
-                script.id = `${name}js`
-                script.textContent=`let ${name} = document.getElementById('${name}');let ${name}js = document.getElementById('${name}js');${name}js.remove()`;
-                appednode.appendChild(create)
-                document.body.appendChild(script)
-        }
+        
 
         function addnotesys(data){
             for(let i=0; i<data.rail_1note.length;i++){
@@ -291,6 +328,42 @@
                 noteaccinput(222, notemap_4)
             }
 
+            // missnote
+            for(i1=0;i1<notemap_1.length;i1++){
+                if(notetimeset()-notemap_1[i1].ntime==11){
+                    notemap_1.splice(0, 1)
+                    combo=0
+                    acctitleon=acctitle[6]
+                    takedamege(notedamage)
+                }
+            }
+            for(i1=0;i1<notemap_2.length;i1++){
+                if(notetimeset()-notemap_2[i1].ntime==11){
+                    notemap_2.splice(0, 1)
+                    combo=0
+                    acctitleon=acctitle[6]
+                    takedamege(notedamage)
+                }
+            }
+            for(i1=0;i1<notemap_3.length;i1++){
+                if(notetimeset()-notemap_3[i1].ntime==11){
+                    notemap_3.splice(0, 1)
+                    combo=0
+                    acctitleon=acctitle[6]
+                    takedamege(notedamage)
+                }
+            }
+            for(i1=0;i1<notemap_4.length;i1++){
+                if(notetimeset()-notemap_4[i1].ntime==11){
+                    notemap_4.splice(0, 1)
+                    combo=0
+                    acctitleon=acctitle[6]
+                    takedamege(notedamage)
+                }
+            }
+
+            takedamege(0)
+
 
             // 노트 움직임
             noterail01.style.bottom=`-${gametime*notespeed}px`
@@ -298,12 +371,13 @@
             noterail03.style.bottom=`-${gametime*notespeed}px`
             noterail04.style.bottom=`-${gametime*notespeed}px`
 
-            gamedatap.innerText = `게임 타임 : ${Math.floor(notetimeset()/60)}초 \n${combo}\n${score}(${onescore*100})\n${acctitleon}`
+            gamedatap.innerText = `게임 타임 : ${Math.floor(notetimeset()/60)}초 \nCombo : ${combo}\n Score : ${Math.round(score)}\nhp : ${hp/10}%\n${acctitleon}`
             requestAnimationFrame(gamerunningsystem)
         }
 
         gamerunningsystem()
 
+        // 보이는 노트위치와 실제 노트위치 맞춤
         function notetimeset(){
             return ((gametime-basedelay)/notespeed)*notespeed
         }
@@ -315,36 +389,43 @@
                     combo++
                     score+=onescore*scoreper[0]
                     acctitleon = acctitle[0]
+                    takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-1 || notetimeset()-data[i].ntime==1){
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[1]
                     acctitleon = acctitle[0]
+                    takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-2 || notetimeset()-data[i].ntime==2){
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[2]
                     acctitleon = acctitle[0]
+                    takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-3 || notetimeset()-data[i].ntime==3){
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[3]
                     acctitleon = acctitle[0]
+                    takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-4 || notetimeset()-data[i].ntime==4){
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[4]
-                    acctitleon = acctitle[0]
+                    acctitleon = acctitle[1]
+                    takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-5 || notetimeset()-data[i].ntime==5){
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[5]
                     acctitleon = acctitle[1]
+                    takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-6 || notetimeset()-data[i].ntime==6){
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[6]
                     acctitleon = acctitle[2]
+                    takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-7 || notetimeset()-data[i].ntime==7){
                     data.splice(0, 1)
                     combo++
@@ -365,6 +446,38 @@
                     combo=0
                     score+=onescore*scoreper[10]
                     acctitleon = acctitle[6]
+                }
+            }
+        }
+
+        function takedamege(damage){
+            if(damage>=0){
+                if(hp-damage<=0){
+                    hp=0
+                    nowhpbarh = hpbar1per*hp
+                    gamerun=0
+                    acctitleon = '게임오버'
+                    if(nowhpbarh<nowhpbarefh){
+                        nowhpbarefh=nowhpbarefh-(hpbar1per*(notedamage/10))
+                    }else{
+                        nowhpbarefh=nowhpbarh
+                    }
+                    hpbaraction()
+                }else{
+                    hp -= damage
+                    nowhpbarh = hpbar1per*hp
+                    if(nowhpbarh<nowhpbarefh){
+                        nowhpbarefh=nowhpbarefh-(hpbar1per*(notedamage/15))
+                    }else{
+                        nowhpbarefh=nowhpbarh
+                    }
+                    hpbaraction()
+                }
+            }else{
+                if(hp-damage>=1000){
+                    hp = 1000
+                }else{
+                    hp-=damage
                 }
             }
         }
