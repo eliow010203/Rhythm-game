@@ -23,9 +23,10 @@
         #rail{
             width: 40vh;
             height: 100vh;
-            background-color: #000000b0;
             position: relative;
             overflow: hidden;
+            background-image:url( './railbg.png');
+            background-size: 100%;
         }
         #noterail_def{
             width: 100%;
@@ -60,6 +61,8 @@
             left: 0px;
             /* left: 30vh; */
             position: absolute;
+            background-image:url( './keybg.png');
+            background-size: 100%;
         }
         #infobar{
             width: 100vw;
@@ -79,23 +82,54 @@
         }
         #hp_bar{
             position: absolute;
-            width: 4vh;
+            width: 5vh;
             height: 100vh;
             background-color: #000000dc;
         }
         #hpind{
-            width: 2vh;
+            width: 3vh;
             position: absolute;
             left: 1vh;
             bottom: 10px;
             background-color: #fff;
         }
+        #hptxt{
+            display: block;
+            width: 10vh;
+            position: absolute;
+            bottom: 6.3vh;
+            height: 5vh;
+            line-height: 7vh;
+            left: -3.4vh;
+            mix-blend-mode: difference;
+            transform: rotate(-90deg);
+            font-size: 2vh;
+            color: #fff;
+            font-family: 'Giants-Bold';
+        }
         #hpindef{
-            width: 2vh;
+            width: 3vh;
             position: absolute;
             left: 1vh;
             bottom: 10px;
             background-color: #ff3f3f;
+        }
+        .noteefc{
+            position: absolute;
+            width: 25%;
+            height: 100%;
+            background: rgb(255,255,255);
+            background: linear-gradient(00deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+        }
+        #gradepertitle{
+            position: absolute;
+            bottom: 35vh;
+            font-family: 'Giants-Bold';
+            font-size: 7.4vh;
+            text-align: center;
+            width: 100%;
+            color: #fff;
+            opacity: .7;
         }
     </style>
 </head>
@@ -105,8 +139,14 @@
     <div id="hp_bar">
         <div id="hpindef"></div>
         <div id="hpind"></div>
+        <div id="hptxt"></div>
     </div>
     <div id="rail">
+        <div id="gradepertitle"></div>
+        <div class="noteefc" style="left: 0%;"></div>
+        <div class="noteefc" style="left: 25%;"></div>
+        <div class="noteefc" style="left: 50%;"></div>
+        <div class="noteefc" style="left: 75%;"></div>
         <div id="noterail_1"></div>
         <div id="noterail_2"></div>
         <div id="noterail_3"></div>
@@ -115,23 +155,23 @@
         <div id="noterail_hit"></div>
     </div>
     <script>
-
+        
         
         
         // 기본설정
         let maxrailsize = 3000
         let basedelay = 151
-        let notespeed = 20
+        let notespeed = 17
         let gametime = 0
-        let hitpoint = 100
+        let hitpoint = window.innerHeight/100*15
         let gamerun = 0
         let score = 0
         let combo = 0
         let acc = 0
         let hp = 1000
 
-        let notedamage = 130
-        let noteheal = -45
+        let notedamage = 80
+        let noteheal = -20
 
         // 화면 사이즈 체크
         let windowheight = window.innerHeight
@@ -152,6 +192,9 @@
         let notemap_4 = new Array
 
         let onescore
+
+        let keyacarray = [0, 0, 0, 0]
+
         
 
         // 맵 불러오기
@@ -169,7 +212,7 @@
             notemap_3 = notedata[0].rail_3note
             notemap_4 = notedata[0].rail_4note
             onescore = (1000000/(notemap_1.length+notemap_2.length+notemap_3.length+notemap_4.length))/100
-            
+
         }
 
 
@@ -186,6 +229,10 @@
             windowheight = window.innerHeight
             windowwidth = window.innerWidth
             setstyle()
+            hpbar1per = (windowheight-20)/hp
+
+            nowhpbarh = hpbar1per*hp
+            nowhpbarefh = hpbar1per*hp
         })
 
         // console.log(windowwidth)
@@ -203,11 +250,19 @@
         let hpbar = document.getElementById('hp_bar')
         let hpbarin = document.getElementById('hpind')
         let hpbaref = document.getElementById('hpindef')
+        let hptxt = document.getElementById('hptxt')
+        let coaistitle = document.getElementById('gradepertitle')
+        let keyefc = document.querySelectorAll('.noteefc')
+
+        for(i=0;i<keyefc.length;i++){
+            keyefc[i].style.opacity=`0`
+        }
         
         // 스타일
         function setstyle(){
+            hitpoint = window.innerHeight/100*15
             railcontainer.style.left=`${(windowwidth/2)-(windowheight/100*20)}px`
-            hpbar.style.left=`${(windowwidth/2)-(windowheight/100*20)-(windowheight/100*4)}px`
+            hpbar.style.left=`${(windowwidth/2)-(windowheight/100*20)-(windowheight/100*5)}px`
             noteraildef.style.opacity=`0`
             noterail01.style.height=`${maxrailsize}px`
             noterail01.style.bottom=`0px`
@@ -237,36 +292,37 @@
 
         function addnotesys(data){
             for(let i=0; i<data.rail_1note.length;i++){
-                addnote(noterail01, data.rail_1note[i].ntime, data.rail_1note[i].notetype)
+                addnote(noterail01, data.rail_1note[i].ntime, data.rail_1note[i].notetype, 1)
             }
             for(let i=0; i<data.rail_2note.length;i++){
-                addnote(noterail02, data.rail_2note[i].ntime, data.rail_2note[i].notetype)
+                addnote(noterail02, data.rail_2note[i].ntime, data.rail_2note[i].notetype, 2)
             }
             for(let i=0; i<data.rail_3note.length;i++){
-                addnote(noterail03, data.rail_3note[i].ntime, data.rail_3note[i].notetype)
+                addnote(noterail03, data.rail_3note[i].ntime, data.rail_3note[i].notetype, 3)
             }
             for(let i=0; i<data.rail_4note.length;i++){
-                addnote(noterail04, data.rail_4note[i].ntime, data.rail_4note[i].notetype)
+                addnote(noterail04, data.rail_4note[i].ntime, data.rail_4note[i].notetype, 4)
             }
         }
 
-        function addnote(appednode=HTMLElement, timeing=Number, type=Number){
+        function addnote(appednode=HTMLElement, timeing=Number, type=Number, keynum){
                 let create = document.createElement('div')
                 create.style.position='absolute'
                 create.style.width=`100%`
                 create.style.height=`${singlenote_h}px`
                 // create.style.left='0px'
-                create.style.bottom=`${((basedelay+timeing)*notespeed)-(singlenote_h/2)+hitpoint}px`
                 if(type==0){
+                    create.style.bottom=`${((basedelay+timeing)*notespeed)-(singlenote_h/2)+hitpoint}px`
                     create.style.backgroundColor=`#fff`
                 }else if(type==1){
-                    create.style.backgroundColor=`#0f0`
+                    create.style.backgroundColor=`#fff`
                     
                 }else if(type==2){
                     create.style.backgroundColor=`#f00`
 
                 }
-                create.className=`${type}_${timeing}`
+                create.className=`note`
+                create.id=`${timeing+1000000*keynum}`
                 appednode.appendChild(create)
         }
 
@@ -284,9 +340,8 @@
         function keysPressed(e) {
             keys[e.keyCode] = true;
             console.log(e.keyCode)
-            
         }
-
+        
         function keysReleased(e) {
             keys[e.keyCode] = false;
         }
@@ -310,22 +365,37 @@
             }
 
 
-            // 노트적중 확인
+            // 노트적중 확인 + 키 이펙트
             // 1번 라인
             if(keys[65]){
-                noteaccinput(65, notemap_1)
+                iskeyact(0,1)
+                noteaccinput(65, notemap_1, 1)
+            }else{
+                iskeyact(0,0)
             }
             // 2번 라인
             if(keys[83]){
-                noteaccinput(83, notemap_2)
+                iskeyact(1,1)
+                noteaccinput(83, notemap_2, 2)
+            }
+            else{
+                iskeyact(1,0)
             }
             // 3번 라인
             if(keys[186]){
-                noteaccinput(186, notemap_3)
+                iskeyact(2,1)
+                noteaccinput(186, notemap_3, 3)
+            }
+            else{
+                iskeyact(2,0)
             }
             // 4번 라인
             if(keys[222]){
-                noteaccinput(222, notemap_4)
+                iskeyact(3,1)
+                noteaccinput(222, notemap_4, 4)
+            }
+            else{
+                iskeyact(3,0)
             }
 
             // missnote
@@ -372,76 +442,112 @@
             noterail04.style.bottom=`-${gametime*notespeed}px`
 
             gamedatap.innerText = `게임 타임 : ${Math.floor(notetimeset()/60)}초 \nCombo : ${combo}\n Score : ${Math.round(score)}\nhp : ${hp/10}%\n${acctitleon}`
+            coaistitle.innerText=`${combo}`
+            hptxt.innerText=`${hp/10}%`
             requestAnimationFrame(gamerunningsystem)
         }
 
         gamerunningsystem()
+
+        
+
+        function iskeyact(key, act){
+            if(act==1){
+                keyacarray[key]=7
+            }else{
+                if(keyacarray[key]<-1){
+
+                }else{
+                    keyacarray[key]-=1
+                }
+            }
+
+            if(keyacarray[key]>0){
+                keyefc[key].style.opacity=1
+            }else{
+                keyefc[key].style.opacity=0
+            }
+        }
 
         // 보이는 노트위치와 실제 노트위치 맞춤
         function notetimeset(){
             return ((gametime-basedelay)/notespeed)*notespeed
         }
 
-        function noteaccinput(keynum, data){
+        function noteaccinput(keynum, data, keyai){
             for(i=0;i<data.length;i++){
+                if(data[i].notetype==0){
+                    keys[keynum]=false
+                }
                 if(notetimeset()-data[i].ntime==0){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[0]
                     acctitleon = acctitle[0]
                     takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-1 || notetimeset()-data[i].ntime==1){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[1]
                     acctitleon = acctitle[0]
                     takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-2 || notetimeset()-data[i].ntime==2){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[2]
                     acctitleon = acctitle[0]
                     takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-3 || notetimeset()-data[i].ntime==3){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[3]
                     acctitleon = acctitle[0]
                     takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-4 || notetimeset()-data[i].ntime==4){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[4]
                     acctitleon = acctitle[1]
                     takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-5 || notetimeset()-data[i].ntime==5){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[5]
                     acctitleon = acctitle[1]
                     takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-6 || notetimeset()-data[i].ntime==6){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[6]
                     acctitleon = acctitle[2]
                     takedamege(noteheal)
                 }else if(notetimeset()-data[i].ntime==-7 || notetimeset()-data[i].ntime==7){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[7]
                     acctitleon = acctitle[3]
                 }else if(notetimeset()-data[i].ntime==-8 || notetimeset()-data[i].ntime==8){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[8]
                     acctitleon = acctitle[4]
                 }else if(notetimeset()-data[i].ntime==-9 || notetimeset()-data[i].ntime==9){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo++
                     score+=onescore*scoreper[9]
                     acctitleon = acctitle[5]
                 }else if(notetimeset()-data[i].ntime==-10 || notetimeset()-data[i].ntime==10){
+                    document.getElementById(`${data[i].ntime+1000000*keyai}`).style.opacity=0
                     data.splice(0, 1)
                     combo=0
                     score+=onescore*scoreper[10]
